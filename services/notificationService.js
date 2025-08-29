@@ -1,6 +1,6 @@
 import Notification from "../models/Notification.js";
 import nodemailer from "nodemailer";
-import twilio from "twilio";
+// import twilio from "twilio";
 
 class NotificationService {
   constructor() {
@@ -15,11 +15,12 @@ class NotificationService {
       },
     });
 
-    // SMS client setup (Twilio)
-    this.smsClient =
-      process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-        ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-        : null;
+    // SMS client setup (Twilio) - DISABLED
+    // this.smsClient =
+    //   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+    //     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    //     : null;
+    this.smsClient = null;
   }
 
   // Create notification
@@ -83,21 +84,21 @@ class NotificationService {
         }
       }
 
-      // Send SMS
-      if (
-        notification.channels?.sms?.enabled &&
-        recipient.contactNumber &&
-        this.smsClient
-      ) {
-        try {
-          await this.sendSMS(notification, recipient);
-          notification.channels.sms.sent = true;
-          notification.channels.sms.sentAt = new Date();
-        } catch (error) {
-          notification.channels.sms.error = error.message;
-          allChannelsSuccessful = false;
-        }
-      }
+      // Send SMS - DISABLED
+      // if (
+      //   notification.channels?.sms?.enabled &&
+      //   recipient.contactNumber &&
+      //   this.smsClient
+      // ) {
+      //   try {
+      //     await this.sendSMS(notification, recipient);
+      //     notification.channels.sms.sent = true;
+      //     notification.channels.sms.sentAt = new Date();
+      //   } catch (error) {
+      //     notification.channels.sms.error = error.message;
+      //     allChannelsSuccessful = false;
+      //   }
+      // }
 
       // Update notification status
       notification.status = allChannelsSuccessful ? "SENT" : "FAILED";
@@ -129,20 +130,20 @@ class NotificationService {
     await this.emailTransporter.sendMail(mailOptions);
   }
 
-  // Send SMS notification
-  async sendSMS(notification, recipient) {
-    if (!this.smsClient) {
-      throw new Error("SMS service not configured");
-    }
+  // Send SMS notification - DISABLED
+  // async sendSMS(notification, recipient) {
+  //   if (!this.smsClient) {
+  //     throw new Error("SMS service not configured");
+  //   }
 
-    const message = this.getSMSMessage(notification);
+  //   const message = this.getSMSMessage(notification);
 
-    await this.smsClient.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: recipient.contactNumber,
-    });
-  }
+  //   await this.smsClient.messages.create({
+  //     body: message,
+  //     from: process.env.TWILIO_PHONE_NUMBER,
+  //     to: recipient.contactNumber,
+  //   });
+  // }
 
   // Get email template based on notification type
   getEmailTemplate(notification) {
@@ -239,18 +240,18 @@ class NotificationService {
     );
   }
 
-  // Get SMS message
-  getSMSMessage(notification) {
-    const baseUrl = process.env.CLIENT_URL || "http://localhost:3000";
-    let message = `HTD: ${notification.title}\n${notification.message}`;
+  // Get SMS message - DISABLED
+  // getSMSMessage(notification) {
+  //   const baseUrl = process.env.CLIENT_URL || "http://localhost:3000";
+  //   let message = `HTD: ${notification.title}\n${notification.message}`;
 
-    if (notification.actionUrl) {
-      message += `\nView: ${baseUrl}${notification.actionUrl}`;
-    }
+  //   if (notification.actionUrl) {
+  //     message += `\nView: ${baseUrl}${notification.actionUrl}`;
+  //   }
 
-    // SMS character limit
-    return message.length > 160 ? message.substring(0, 157) + "..." : message;
-  }
+  //   // SMS character limit
+  //   return message.length > 160 ? message.substring(0, 157) + "..." : message;
+  // }
 
   // Process scheduled notifications
   async processScheduledNotifications() {
@@ -320,7 +321,7 @@ class NotificationService {
       priority: "HIGH",
       channels: {
         email: { enabled: true },
-        sms: { enabled: true },
+        sms: { enabled: false }, // SMS disabled
         inApp: { enabled: true },
       },
       relatedEntity: {
