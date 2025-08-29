@@ -5,15 +5,15 @@ import nodemailer from "nodemailer";
 class NotificationService {
   constructor() {
     // Email transporter setup
-    this.emailTransporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    // this.emailTransporter = nodemailer.createTransport({
+    //   host: process.env.SMTP_HOST || "smtp.gmail.com",
+    //   port: process.env.SMTP_PORT || 587,
+    //   secure: false,
+    //   auth: {
+    //     user: process.env.SMTP_USER,
+    //     pass: process.env.SMTP_PASS,
+    //   },
+    // });
 
     // SMS client setup (Twilio) - DISABLED
     // this.smsClient =
