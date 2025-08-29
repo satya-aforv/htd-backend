@@ -1,0 +1,12 @@
+{
+  "watch": ["*.js", "routes/*.js", "controllers/*.js", "middleware/*.js", "models/*.js", "config/*.js"],
+  "ext": "js,json",
+  "ignore": ["node_modules/", "uploads/", "logs/"],
+  "delay": "2000",
+  "restartable": "rs",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "signal": "SIGTERM",
+  "killTimeout": 3000
+}

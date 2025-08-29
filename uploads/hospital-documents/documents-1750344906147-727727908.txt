@@ -1,0 +1,22 @@
+multi-tenant: 
+
+1.master admin: 
+1. manage master admin and master_users 
+2. master_groups , master_permissions, master_groups-permissions, master_users-groups,
+3. based on permissions master user can create tenant , teanat create based on subscription plans ( limit usres, space, no of api requests per day , etc..) 
+4. every tenant must be separate tenant specific database  and default tenant admin, in side tenant - users, groups, permissions , user -> groups 
+5.any applications( may contain sub modules)  can assign to tetant - that application must work based on tenant specific permissions 
+6.every teanat can work like  myproject.com  means tenant1.myproject.com  (or) myproject.com/tenant1/  like this 
+7. support ticket management system is  module to give suppot for tenants 
+8. means from master admin tenant specific major app deployment etc.. can handle like 
+9.billing system - to generate invoice based on usage , change between plans etc... 
+10.email system - for communication between tenant
+11.backup and restore - in any case data not be loosed 
+code development : 
+1. main in node js , jwt,helmat, cors, high security , config , controller, routes, --- a register is required global and tenant specific - dynamically , menu manager is required - it also work like tenant specific dynamically work like 
+2.some times i required - python machinie learning support - it also required to integrate facilty 
+3. mongodb , fastr working redis 
+
+frontend :
+tabler ui 
+http://aforv.localhost:3000/tenants
