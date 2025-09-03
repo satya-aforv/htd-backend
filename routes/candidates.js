@@ -60,12 +60,19 @@ router.post(
     body("contactNumber").notEmpty().withMessage("Contact number is required"),
     body("dateOfBirth").isDate().withMessage("Valid date of birth is required"),
     body("gender")
+      .customSanitizer((v) => (typeof v === "string" ? v.toUpperCase() : v))
       .isIn(["MALE", "FEMALE", "OTHER"])
       .withMessage("Valid gender is required"),
     body("address.street").notEmpty().withMessage("Street address is required"),
     body("address.city").notEmpty().withMessage("City is required"),
     body("address.state").notEmpty().withMessage("State is required"),
     body("address.pincode").notEmpty().withMessage("Pincode is required"),
+    // Optional: accept status in any case
+    body("status")
+      .optional()
+      .customSanitizer((v) => (typeof v === "string" ? v.toUpperCase() : v))
+      .isIn(["HIRED", "IN_TRAINING", "DEPLOYED", "INACTIVE"])
+      .withMessage("Valid status is required"),
   ],
   validate,
   createCandidate

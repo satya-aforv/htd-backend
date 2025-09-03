@@ -109,6 +109,17 @@ export const createCandidate = async (req, res) => {
       address,
       candidateId,
       user,
+      status,
+      highestQualification,
+      previousSalary,
+      expectedSalary,
+      education = [],
+      itExperience = [],
+      nonItExperience = [],
+      careerGaps = [],
+      skills = [],
+      documents = [],
+      notes,
     } = req.body;
 
     // Check if candidate with email already exists
@@ -123,17 +134,106 @@ export const createCandidate = async (req, res) => {
     const generatedCandidateId =
       candidateId || `HTDC-${Date.now().toString().slice(-6)}`;
 
+    // Normalize enums
+    const normalizedGender = (gender || "").toString().toUpperCase();
+    const normalizedStatus = (status || "HIRED").toString().toUpperCase();
+
+    // Server-side age validation: must be >= 18 years
+    if (dateOfBirth) {
+      const dob = new Date(dateOfBirth);
+      if (!Number.isNaN(dob.getTime())) {
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+          age--;
+        }
+        if (age < 18) {
+          return res
+            .status(400)
+            .json({ message: "Candidate must be at least 18 years old" });
+        }
+      }
+    }
+
+    // Defensive helpers
+    const isNonEmptyString = (v) => typeof v === "string" && v.trim() !== "";
+    const filterEducation = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (e) =>
+          isNonEmptyString(e?.degree) &&
+          isNonEmptyString(e?.institution) &&
+          isNonEmptyString(e?.fieldOfStudy) &&
+          e?.yearOfPassing != null &&
+          e?.percentage != null
+      );
+    const filterExperience = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (e) =>
+          (isNonEmptyString(e?.company) || isNonEmptyString(e?.companyName)) &&
+          isNonEmptyString(e?.role) &&
+          e?.startDate &&
+          e?.endDate
+      );
+    const filterCareerGaps = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (g) => g?.startDate && g?.endDate && isNonEmptyString(g?.reason)
+      );
+    const filterSkills = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (s) =>
+          isNonEmptyString(s?.name) &&
+          isNonEmptyString(s?.type) &&
+          isNonEmptyString(s?.proficiency) &&
+          isNonEmptyString(s?.acquiredDuring)
+      );
+    const filterDocuments = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (d) => isNonEmptyString(d?.type) && isNonEmptyString(d?.url)
+      );
+
+    // Merge it/non-it experience arrays into single schema array
+    const mergedExperience = [
+      ...filterExperience(itExperience).map((exp) => ({
+        type: "IT",
+        companyName: exp.company || exp.companyName || "",
+        role: exp.role,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        salary: exp.salary ?? 0,
+        documentUrl: exp.documentUrl,
+      })),
+      ...filterExperience(nonItExperience).map((exp) => ({
+        type: "NON-IT",
+        companyName: exp.company || exp.companyName || "",
+        role: exp.role,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        salary: exp.salary ?? 0,
+        documentUrl: exp.documentUrl,
+      })),
+    ];
+
     const newCandidate = new Candidate({
       name,
       email,
       contactNumber,
       alternateContactNumber,
       dateOfBirth,
-      gender,
+      gender: normalizedGender,
       address,
       candidateId: generatedCandidateId,
       user,
-      status: "HIRED",
+      status: normalizedStatus,
+      highestQualification,
+      previousSalary,
+      expectedSalary,
+      education: filterEducation(education),
+      experience: mergedExperience,
+      careerGaps: filterCareerGaps(careerGaps),
+      skills: filterSkills(skills),
+      documents: filterDocuments(documents),
+      notes,
     });
 
     await newCandidate.save();
@@ -152,11 +252,122 @@ export const createCandidate = async (req, res) => {
 export const updateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
 
     // Prevent updating certain fields directly
     delete updateData.candidateId;
     delete updateData.user;
+
+    // Normalize enums if present
+    if (typeof updateData.gender === "string") {
+      updateData.gender = updateData.gender.toUpperCase();
+    }
+    if (typeof updateData.status === "string") {
+      updateData.status = updateData.status.toUpperCase();
+    }
+
+    // Coerce empty string dates to undefined (avoid cast errors)
+    if (updateData.dateOfBirth === "") {
+      delete updateData.dateOfBirth;
+    }
+
+    // Server-side age validation on update when dateOfBirth is provided
+    if (updateData.dateOfBirth) {
+      const dob = new Date(updateData.dateOfBirth);
+      if (!Number.isNaN(dob.getTime())) {
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+          age--;
+        }
+        if (age < 18) {
+          return res
+            .status(400)
+            .json({ message: "Candidate must be at least 18 years old" });
+        }
+      }
+    }
+
+    // Defensive helpers (same as in create)
+    const isNonEmptyString = (v) => typeof v === "string" && v.trim() !== "";
+    const filterEducation = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (e) =>
+          isNonEmptyString(e?.degree) &&
+          isNonEmptyString(e?.institution) &&
+          isNonEmptyString(e?.fieldOfStudy) &&
+          e?.yearOfPassing != null &&
+          e?.percentage != null
+      );
+    const filterExperience = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (e) =>
+          (isNonEmptyString(e?.company) || isNonEmptyString(e?.companyName)) &&
+          isNonEmptyString(e?.role) &&
+          e?.startDate &&
+          e?.endDate
+      );
+    const filterCareerGaps = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (g) => g?.startDate && g?.endDate && isNonEmptyString(g?.reason)
+      );
+    const filterSkills = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (s) =>
+          isNonEmptyString(s?.name) &&
+          isNonEmptyString(s?.type) &&
+          isNonEmptyString(s?.proficiency) &&
+          isNonEmptyString(s?.acquiredDuring)
+      );
+    const filterDocuments = (arr) =>
+      (Array.isArray(arr) ? arr : []).filter(
+        (d) => isNonEmptyString(d?.type) && isNonEmptyString(d?.url)
+      );
+
+    // Merge itExperience and nonItExperience into experience if provided
+    if (
+      Array.isArray(updateData.itExperience) ||
+      Array.isArray(updateData.nonItExperience)
+    ) {
+      const itExp = filterExperience(updateData.itExperience).map((exp) => ({
+        type: "IT",
+        companyName: exp.company || exp.companyName || "",
+        role: exp.role,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        salary: exp.salary ?? 0,
+        documentUrl: exp.documentUrl,
+      }));
+      const nonItExp = filterExperience(updateData.nonItExperience).map(
+        (exp) => ({
+          type: "NON-IT",
+          companyName: exp.company || exp.companyName || "",
+          role: exp.role,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          salary: exp.salary ?? 0,
+          documentUrl: exp.documentUrl,
+        })
+      );
+      updateData.experience = [...itExp, ...nonItExp];
+      delete updateData.itExperience;
+      delete updateData.nonItExperience;
+    }
+
+    // Filter other arrays if provided (to avoid partial placeholder items)
+    if (Array.isArray(updateData.education)) {
+      updateData.education = filterEducation(updateData.education);
+    }
+    if (Array.isArray(updateData.careerGaps)) {
+      updateData.careerGaps = filterCareerGaps(updateData.careerGaps);
+    }
+    if (Array.isArray(updateData.skills)) {
+      updateData.skills = filterSkills(updateData.skills);
+    }
+    if (Array.isArray(updateData.documents)) {
+      updateData.documents = filterDocuments(updateData.documents);
+    }
 
     const candidate = await Candidate.findByIdAndUpdate(
       id,
