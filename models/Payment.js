@@ -7,13 +7,18 @@ const paymentSchema = new mongoose.Schema(
       ref: "Candidate",
       required: true,
     },
+    trainingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      required: true,
+    },
     amount: {
       type: Number,
       required: true,
     },
     type: {
       type: String,
-      enum: ["STIPEND", "SALARY", "BONUS", "REIMBURSEMENT", "OTHER"],
+      enum: ["stipend", "salary", "bonus", "reimbursement", "other"],
       required: true,
     },
     paymentDate: {
@@ -22,7 +27,7 @@ const paymentSchema = new mongoose.Schema(
     },
     paymentMode: {
       type: String,
-      enum: ["BANK_TRANSFER", "CHEQUE", "CASH", "UPI", "OTHER"],
+      enum: ["bank_transfer", "cheque", "cash", "upi", "other"],
       required: true,
     },
     transactionId: {
@@ -49,8 +54,8 @@ const paymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["PENDING", "COMPLETED", "FAILED", "CANCELLED"],
-      default: "PENDING",
+      enum: ["pending", "completed", "failed", "cancelled"],
+      default: "pending",
     },
     paymentProofUrl: {
       type: String,
@@ -65,9 +70,7 @@ const paymentSchema = new mongoose.Schema(
       ref: "Training",
     },
     month: {
-      type: Number, // 1-12 for Jan-Dec
-      min: 1,
-      max: 12,
+      type: String, // 1-12 for Jan-Dec
       required: true,
     },
     year: {
@@ -87,9 +90,16 @@ const paymentSchema = new mongoose.Schema(
 );
 
 // Static method to calculate total payments for a candidate
-paymentSchema.statics.calculateTotalPaymentsForCandidate = async function (candidateId) {
+paymentSchema.statics.calculateTotalPaymentsForCandidate = async function (
+  candidateId
+) {
   const result = await this.aggregate([
-    { $match: { candidate: mongoose.Types.ObjectId(candidateId), status: "COMPLETED" } },
+    {
+      $match: {
+        candidate: mongoose.Types.ObjectId(candidateId),
+        status: "COMPLETED",
+      },
+    },
     { $group: { _id: "$type", total: { $sum: "$amount" } } },
   ]);
 
@@ -112,26 +122,29 @@ paymentSchema.statics.calculateTotalPaymentsForCandidate = async function (candi
 };
 
 // Static method to get monthly payment summary for a candidate
-paymentSchema.statics.getMonthlyPaymentSummary = async function (candidateId, year) {
+paymentSchema.statics.getMonthlyPaymentSummary = async function (
+  candidateId,
+  year
+) {
   const result = await this.aggregate([
-    { 
-      $match: { 
-        candidate: mongoose.Types.ObjectId(candidateId), 
+    {
+      $match: {
+        candidate: mongoose.Types.ObjectId(candidateId),
         status: "COMPLETED",
-        year: year
-      } 
+        year: year,
+      },
     },
-    { 
-      $group: { 
-        _id: { month: "$month", type: "$type" }, 
-        total: { $sum: "$amount" } 
-      } 
+    {
+      $group: {
+        _id: { month: "$month", type: "$type" },
+        total: { $sum: "$amount" },
+      },
     },
-    { $sort: { "_id.month": 1 } }
+    { $sort: { "_id.month": 1 } },
   ]);
 
   const monthlySummary = {};
-  
+
   // Initialize all months
   for (let i = 1; i <= 12; i++) {
     monthlySummary[i] = {
@@ -141,7 +154,7 @@ paymentSchema.statics.getMonthlyPaymentSummary = async function (candidateId, ye
       bonus: 0,
       reimbursement: 0,
       other: 0,
-      total: 0
+      total: 0,
     };
   }
 
@@ -149,7 +162,7 @@ paymentSchema.statics.getMonthlyPaymentSummary = async function (candidateId, ye
   result.forEach((item) => {
     const month = item._id.month;
     const type = item._id.type.toLowerCase();
-    
+
     monthlySummary[month][type] = item.total;
     monthlySummary[month].total += item.total;
   });
@@ -158,14 +171,21 @@ paymentSchema.statics.getMonthlyPaymentSummary = async function (candidateId, ye
 };
 
 // Generate payment statement for a specific period
-paymentSchema.statics.generatePaymentStatement = async function (candidateId, startDate, endDate) {
+paymentSchema.statics.generatePaymentStatement = async function (
+  candidateId,
+  startDate,
+  endDate
+) {
   const payments = await this.find({
     candidate: candidateId,
     status: "COMPLETED",
-    paymentDate: { $gte: startDate, $lte: endDate }
+    paymentDate: { $gte: startDate, $lte: endDate },
   }).sort({ paymentDate: 1 });
 
-  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalAmount = payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0
+  );
 
   return {
     candidateId,

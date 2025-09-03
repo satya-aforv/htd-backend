@@ -43,20 +43,17 @@ router.post(
   authenticate,
   // checkPermission('payments', 'create'),
   [
-    body("candidate").notEmpty().withMessage("Candidate ID is required"),
+    body("candidateId").notEmpty().withMessage("Candidate ID is required"),
     body("amount").isNumeric().withMessage("Amount is required"),
     body("type")
-      .isIn(["STIPEND", "SALARY", "BONUS", "REIMBURSEMENT", "OTHER"])
+      .isIn(["stipend", "salary", "bonus", "reimbursement", "other"])
       .withMessage("Valid payment type is required"),
     body("paymentDate").isDate().withMessage("Valid payment date is required"),
     body("paymentMode")
-      .isIn(["BANK_TRANSFER", "CHEQUE", "CASH", "UPI", "OTHER"])
+      .isIn(["bank_transfer", "cheque", "cash", "upi", "other"])
       .withMessage("Valid payment mode is required"),
-    body("month")
-      .isInt({ min: 1, max: 12 })
-      .withMessage("Valid month is required"),
+    body("month").isString().withMessage("Valid month is required"),
     body("year").isNumeric().withMessage("Year is required"),
-    body("paymentId").notEmpty().withMessage("Payment ID is required"),
   ],
   validate,
   createPayment
