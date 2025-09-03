@@ -207,6 +207,12 @@ const candidateSchema = new mongoose.Schema(
       default: 0,
     },
 
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     // Education Details
     education: [educationSchema],
 
