@@ -56,7 +56,7 @@ app.use(
     origin: [
       process.env.CLIENT_URL,
       "http://localhost:5173",
-      /http:\/\/localhost:\d+/
+      /http:\/\/localhost:\d+/,
     ].filter(Boolean),
     credentials: true,
   })
@@ -89,7 +89,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes with security middleware
-app.use("/api/auth", authRateLimit, accountLockout, authRoutes);
+app.use("/api/auth", accountLockout, authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/files", uploadRateLimit, fileRoutes); // File management routes
 app.use("/api/states", stateRoutes);
@@ -153,9 +153,9 @@ const server = app.listen(PORT, () => {
     } requests per 15 minutes`
   );
   console.log(`File uploads directory: ${path.join(__dirname, "uploads")}`);
-  
+
   // Start the scheduler service
-  console.log('Starting report scheduler...');
+  console.log("Starting report scheduler...");
   schedulerService.start(5); // Check every 5 minutes
 });
 

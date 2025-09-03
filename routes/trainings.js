@@ -51,12 +51,12 @@ router.post(
   authenticate,
   // checkPermission('trainings', 'create'),
   [
-    body("candidate").notEmpty().withMessage("Candidate ID is required"),
-    body("startDate").isDate().withMessage("Valid start date is required"),
-    body("expectedEndDate")
-      .isDate()
+    body("candidateId").notEmpty().withMessage("Candidate ID is required"),
+    body("startDate").isString().withMessage("Valid start date is required"),
+    body("endDate")
+      .isString()
       .withMessage("Valid expected end date is required"),
-    body("trainingId").notEmpty().withMessage("Training ID is required"),
+    body("trainingId").optional(),
   ],
   validate,
   createTraining

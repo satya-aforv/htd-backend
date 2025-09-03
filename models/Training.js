@@ -105,7 +105,7 @@ const trainingSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    expectedEndDate: {
+    endDate: {
       type: Date,
       required: true,
     },
@@ -157,7 +157,7 @@ const trainingSchema = new mongoose.Schema(
 // Calculate total training duration in days
 trainingSchema.methods.calculateDuration = function () {
   if (!this.startDate) return 0;
-  
+
   const endDate = this.actualEndDate || this.expectedEndDate || new Date();
   const diffTime = Math.abs(endDate - this.startDate);
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -171,8 +171,11 @@ trainingSchema.methods.calculateTotalExpenses = function () {
 // Calculate average evaluation rating
 trainingSchema.methods.calculateAverageRating = function () {
   if (this.evaluations.length === 0) return 0;
-  
-  const totalRating = this.evaluations.reduce((sum, evaluation) => sum + evaluation.rating, 0);
+
+  const totalRating = this.evaluations.reduce(
+    (sum, evaluation) => sum + evaluation.rating,
+    0
+  );
   return totalRating / this.evaluations.length;
 };
 
@@ -184,7 +187,8 @@ trainingSchema.methods.generateSummary = function () {
     duration: this.calculateDuration(),
     status: this.status,
     totalModules: this.modules.length,
-    completedModules: this.modules.filter(m => m.status === "COMPLETED").length,
+    completedModules: this.modules.filter((m) => m.status === "COMPLETED")
+      .length,
     averageRating: this.calculateAverageRating(),
     totalExpenses: this.calculateTotalExpenses(),
     skillsAcquired: this.skillsAcquired.length,
